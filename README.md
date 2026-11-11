@@ -22,8 +22,9 @@ pnpm run build                 # compiles src/ to dist/
 node dist/cli.js --help
 ```
 
-To have a `fig2pot` command on your PATH, run `pnpm link --global` in the repository (it links
-the package's `bin`, `dist/cli.js`). During development `node src/cli.ts …` runs the TypeScript
+To have a `fig2pot` command on your PATH, run `pnpm add -g .` in the repository after building
+(pnpm ≤ 10: `pnpm link --global`). It links the package's `bin`, `dist/cli.js`, to this checkout,
+so a rebuild takes effect without reinstalling. During development `node src/cli.ts …` runs the TypeScript
 sources directly (Node 24 strips the types), with no build step. The rest of this README writes
 `fig2pot`; substitute whichever form you use.
 
