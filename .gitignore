@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.penpot
+test/fixtures-large/*
+!test/fixtures-large/README.md
+tools/visual/.work*/
+.DS_Store
+.figma-token
+test/refs/

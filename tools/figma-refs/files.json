@@ -1,0 +1,20 @@
+{
+  "comment": "Figma file keys of the fixtures as imported into the dedicated Figma test account (Drafts). Node ids equal the GUIDs in the .fig files.",
+  "files": {
+    "test/fixtures-large/auto-layout-playground.fig": "XyMeuhHs3dRshzuuO3yvOj",
+    "test/fixtures/radix-icons.fig": "m4f8pY5oBP7IhIvb1aa9Su",
+    "test/fixtures/grida-vector.fig": "SPH9yfmj9eZJeJZxeSlMF4",
+    "test/fixtures/grida-stroke.fig": "kSirFMZCICYSspY8KAFGvK",
+    "test/fixtures/grida-frame.fig": "ettmqUcWamUVXPW3F87B89",
+    "test/fixtures/grida-components.fig": "sGQWIYBN9rwglUX0O3MURk",
+    "test/fixtures/f2s-vector.fig": "Xg6CdOhQf3N9oOSm0CwyN9",
+    "test/fixtures/f2s-structure.fig": "N8mTduQazF8uFlq9hBjJ04",
+    "test/fixtures/f2s-stacks-wrap.fig": "9wmGusyjLgQLtbSoIjBbT3",
+    "test/fixtures/f2s-sections.fig": "ZA6S6X8kPyWq0DruWkXqk1",
+    "test/fixtures/f2s-prototyping.fig": "pPrnnFoK7sZkuZPcCJ5dVA",
+    "test/fixtures/f2s-prototyping-swaps-and-instances.fig": "iQmXLASfgYjK3SSHLtDI95",
+    "test/fixtures/f2s-prototyping-components.fig": "UEuw6uYw9lvexWbnFJWn0N",
+    "test/fixtures/f2s-noise-and-grain.fig": "ckqdxIIIqFDJEyLsGLJm2m",
+    "test/fixtures/f2s-corners.fig": "CH2lXUJqEXnzTRns5ViX6L"
+  }
+}

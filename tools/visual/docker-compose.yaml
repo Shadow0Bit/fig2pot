@@ -1,0 +1,138 @@
+# Minimal local Penpot for fig2pot's visual-verification harness.
+# Derived from penpot/docker/images/docker-compose.yaml (upstream develop),
+# trimmed to what scripted import + export needs (no mailpit, admin-console, mcp).
+#
+#   docker compose -f tools/visual/docker-compose.yaml up -d
+#
+# Everything is namespaced by the compose project name below, so volumes and
+# networks are called `fig2pot-penpot_*` and do not collide with other stacks.
+name: fig2pot-penpot
+
+x-flags: &penpot-flags
+  # registration + password login for the scripted test user, no email
+  # verification, cookies usable over plain http://localhost, no telemetry.
+  # 2.19 enables `admin-console` (nitrate) by default; without that service
+  # every get-profile fails with :nitrate-not-configured, so turn it off.
+  # Penpot's built-in defaults (render-switch, feature-render-wasm, google-fonts-
+  # provider, …) still apply; these are appended. With render-switch on, a user
+  # without a saved preference sees the classic SVG renderer; the harness picks
+  # the export engine per request (run.ts --renderer svg|wasm).
+  # PENPOT_EXTRA_FLAGS appends more flags without editing this file.
+  PENPOT_FLAGS: >-
+    enable-registration enable-login-with-password disable-email-verification
+    disable-secure-session-cookies disable-telemetry disable-onboarding
+    disable-admin-console
+    enable-access-tokens ${PENPOT_EXTRA_FLAGS:-}
+
+x-uri: &penpot-public-uri
+  PENPOT_PUBLIC_URI: http://localhost:${PENPOT_PORT:-9001}
+
+x-body-size: &penpot-http-body-size
+  PENPOT_HTTP_SERVER_MAX_BODY_SIZE: 367001600
+  PENPOT_HTTP_SERVER_MAX_MULTIPART_BODY_SIZE: 367001600
+
+x-secret-key: &penpot-secret-key
+  # Local-only instance; a fixed key keeps sessions valid across restarts.
+  PENPOT_SECRET_KEY: fig2pot-local-visual-harness-not-a-secret-0123456789abcdef
+
+x-database: &penpot-database
+  PENPOT_DATABASE_URI: postgresql://penpot-postgres/penpot
+  PENPOT_DATABASE_USERNAME: penpot
+  PENPOT_DATABASE_PASSWORD: penpot
+
+networks:
+  penpot:
+
+volumes:
+  postgres:
+  assets:
+
+services:
+  penpot-frontend:
+    image: "penpotapp/frontend:${PENPOT_VERSION:-2.19.0}"
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${PENPOT_PORT:-9001}:8080"
+    volumes:
+      - assets:/opt/data/assets
+    depends_on:
+      - penpot-backend
+      - penpot-exporter
+    networks:
+      - penpot
+    environment:
+      << : [*penpot-flags, *penpot-http-body-size, *penpot-public-uri]
+    # No healthcheck: the image has neither curl nor wget. penpot.ts `up()`
+    # polls frontend, backend and exporter through http://localhost:9001.
+
+  penpot-backend:
+    image: "penpotapp/backend:${PENPOT_VERSION:-2.19.0}"
+    restart: unless-stopped
+    volumes:
+      - assets:/opt/data/assets
+    depends_on:
+      penpot-postgres:
+        condition: service_healthy
+      penpot-valkey:
+        condition: service_healthy
+    networks:
+      - penpot
+    environment:
+      << : [*penpot-flags, *penpot-public-uri, *penpot-http-body-size, *penpot-secret-key, *penpot-database]
+      PENPOT_REDIS_URI: redis://penpot-valkey/0
+      PENPOT_OBJECTS_STORAGE_BACKEND: fs
+      PENPOT_OBJECTS_STORAGE_FS_DIRECTORY: /opt/data/assets
+      PENPOT_TELEMETRY_ENABLED: "false"
+      # No SMTP: email verification is disabled, so nothing needs to be sent.
+      PENPOT_SMTP_DEFAULT_FROM: no-reply@example.com
+      PENPOT_SMTP_DEFAULT_REPLY_TO: no-reply@example.com
+
+  penpot-exporter:
+    image: "penpotapp/exporter:${PENPOT_VERSION:-2.19.0}"
+    restart: unless-stopped
+    depends_on:
+      penpot-valkey:
+        condition: service_healthy
+    networks:
+      - penpot
+    environment:
+      << : [*penpot-flags, *penpot-secret-key, *penpot-public-uri]
+      # The exporter's headless browser loads the frontend over the internal
+      # network (fonts from Google are fetched over the default bridge network,
+      # which has internet access).
+      PENPOT_INTERNAL_URI: http://penpot-frontend:8080
+      PENPOT_REDIS_URI: redis://penpot-valkey/0
+
+  penpot-postgres:
+    image: "postgres:15"
+    restart: unless-stopped
+    stop_signal: SIGINT
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U penpot"]
+      interval: 2s
+      timeout: 10s
+      retries: 15
+      start_period: 2s
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    networks:
+      - penpot
+    environment:
+      - POSTGRES_INITDB_ARGS=--data-checksums
+      - POSTGRES_DB=penpot
+      - POSTGRES_USER=penpot
+      - POSTGRES_PASSWORD=penpot
+
+  penpot-valkey:
+    image: valkey/valkey:8.1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
+      interval: 1s
+      timeout: 3s
+      retries: 10
+      start_period: 3s
+    networks:
+      - penpot
+    environment:
+      - VALKEY_EXTRA_FLAGS=--maxmemory 128mb --maxmemory-policy volatile-lfu
