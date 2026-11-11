@@ -1,0 +1,41 @@
+{
+  "name": "fig2pot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Convert Figma .fig files into .penpot files that Penpot can import",
+  "type": "module",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=24"
+  },
+  "bin": {
+    "fig2pot": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev": "node src/cli.ts"
+  },
+  "dependencies": {
+    "@penpot/library": "1.3.0",
+    "fflate": "^0.8.3",
+    "fzstd": "^0.1.1",
+    "jpeg-js": "^0.4.4",
+    "kiwi-schema": "^0.5.0",
+    "pngjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/pngjs": "^6.0.5",
+    "pixelmatch": "^8.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}
