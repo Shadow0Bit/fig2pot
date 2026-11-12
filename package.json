@@ -4,7 +4,7 @@
   "private": true,
   "description": "Convert Figma .fig files into .penpot files that Penpot can import",
   "type": "module",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "engines": {
     "node": ">=24"
   },

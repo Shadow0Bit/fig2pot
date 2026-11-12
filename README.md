@@ -374,8 +374,8 @@ and [test/fixtures-large/README.md](test/fixtures-large/README.md).
 
 ## Licence
 
-No licence has been chosen for this code yet (`package.json`: `"license": "UNLICENSED"`,
-`"private": true`). It includes generated data from third parties:
+fig2pot is released under the [MIT License](LICENSE). It includes generated data from third
+parties, which keeps its own licence:
 `src/penpot/text/gfonts-catalogue.ts` is derived from Penpot's Google Fonts catalogue
 (`common/resources/fonts/gfonts.2025.11.28.json`, MPL-2.0, Copyright (c) KALEIDOS SUBSIDIARY SL);
 `src/penpot/text/coverage-data.ts`, `advances-data.ts` and the metrics table in `metrics.ts` are
