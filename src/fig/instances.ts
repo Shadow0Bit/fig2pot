@@ -429,7 +429,8 @@ class InstanceResolver {
 
   /**
    * Turns component property assignments into PROP entries on the nodes of
-   * `symbol` that reference the property (`componentPropRefs`).
+   * `symbol` that reference the property (`componentPropRefs`, or a PROP_REF
+   * entry of `parameterConsumptionMap`).
    */
   private addPropLayer(
     expansion: Expansion,
@@ -481,10 +482,23 @@ class InstanceResolver {
     if (refs) return refs;
     refs = [];
     const walk = (node: FigNode): void => {
+      const key = overrideKeyOf(node.change, node.guid);
+      const bound = new Set<string>();
+      const add = (defID: string | undefined, field: PropRef['field'] | undefined): void => {
+        if (!defID || !field || bound.has(`${defID} ${field}`)) return;
+        bound.add(`${defID} ${field}`);
+        refs!.push({ defID, field, key });
+      };
       for (const ref of node.change.componentPropRefs ?? []) {
-        const defID = guidKey(ref.defID);
-        if (!defID || ref.isDeleted || !ref.componentPropNodeField) continue;
-        refs!.push({ defID, field: ref.componentPropNodeField, key: overrideKeyOf(node.change, node.guid) });
+        if (!ref.isDeleted) add(guidKey(ref.defID), ref.componentPropNodeField);
+      }
+      // Newer files store the binding as a PROP_REF entry of `parameterConsumptionMap`, instead of or next to `componentPropRefs`.
+      for (const entry of node.change.parameterConsumptionMap?.entries ?? []) {
+        const field = entry.variableField;
+        if (entry.variableData?.dataType !== 'PROP_REF') continue;
+        if (field === 'VISIBLE' || field === 'TEXT_DATA' || field === 'OVERRIDDEN_SYMBOL_ID') {
+          add(guidKey(entry.variableData.value?.propRefValue?.defId), field);
+        }
       }
       // Instances' children are materialised content, never the symbol's own.
       if (node.type !== 'INSTANCE') for (const child of node.children) walk(child);

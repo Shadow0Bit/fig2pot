@@ -305,3 +305,63 @@ describe('resolveInstances: limits', () => {
     }
   });
 });
+
+/**
+ * Newer files bind a layer to a component property with a PROP_REF entry of
+ * `parameterConsumptionMap` and leave `componentPropRefs` empty (56 visibility
+ * bindings of a 2026 file: its instances kept the icons and buttons their
+ * boolean properties switch off).
+ */
+describe('resolveInstances: property bindings in parameterConsumptionMap', () => {
+  const propRef = (def: string, variableField: string) => ({
+    variableData: { value: { propRefValue: { defId: G(def) } }, dataType: 'PROP_REF', resolvedDataType: 'BOOLEAN' },
+    variableField,
+  });
+  const symbol = (bindings: Record<string, unknown>): NodeChange[] => [
+    ...page(),
+    n('1:1', 'SYMBOL', '0:1', {
+      componentPropDefs: [
+        { id: G('9:1'), name: 'Icon', type: 'BOOL', initialValue: { boolValue: true } },
+        { id: G('9:2'), name: 'Label', type: 'TEXT', initialValue: { textValue: { characters: 'Button' } } },
+      ],
+    }),
+    n('1:2', 'FRAME', '1:1', bindings),
+    n('1:3', 'TEXT', '1:1', { textData: { characters: 'Button' }, parameterConsumptionMap: { entries: [propRef('9:2', 'TEXT_DATA')] } }),
+  ];
+  const assignments = [
+    { defID: G('9:1'), value: { boolValue: false } },
+    { defID: G('9:2'), value: { textValue: { characters: 'Save' } } },
+  ];
+
+  it('applies visibility and text assignments through PROP_REF entries', () => {
+    const { doc, warnings } = run([
+      ...symbol({ parameterConsumptionMap: { entries: [propRef('9:1', 'VISIBLE')] } }),
+      n('3:1', 'INSTANCE', '0:1', { ...inst('1:1'), componentPropAssignments: assignments }),
+      n('3:2', 'INSTANCE', '0:1', inst('1:1')),
+    ]);
+    expect(warnings).toEqual([]);
+    expect(get(doc, 'I3:1;1:2').change.visible).toBe(false);
+    expect(get(doc, 'I3:1;1:3').change.textData?.characters).toBe('Save');
+    // Without an assignment the symbol's own values stay.
+    expect(get(doc, 'I3:2;1:2').change.visible).not.toBe(false);
+    expect(get(doc, 'I3:2;1:3').change.textData?.characters).toBe('Button');
+  });
+
+  it('reads a binding stored in both formats, and ignores entries that are not property references', () => {
+    const variableAlias = { variableData: { value: { alias: { guid: G('7:7') } }, dataType: 'ALIAS' }, variableField: 'VISIBLE' };
+    const both = run([
+      ...symbol({
+        componentPropRefs: [{ defID: G('9:1'), componentPropNodeField: 'VISIBLE' }],
+        parameterConsumptionMap: { entries: [propRef('9:1', 'VISIBLE')] },
+      }),
+      n('3:1', 'INSTANCE', '0:1', { ...inst('1:1'), componentPropAssignments: assignments }),
+    ]);
+    expect(get(both.doc, 'I3:1;1:2').change.visible).toBe(false);
+
+    const unrelated = run([
+      ...symbol({ parameterConsumptionMap: { entries: [variableAlias, propRef('9:1', 'CORNER_RADIUS')] } }),
+      n('3:1', 'INSTANCE', '0:1', { ...inst('1:1'), componentPropAssignments: assignments }),
+    ]);
+    expect(get(unrelated.doc, 'I3:1;1:2').change.visible).not.toBe(false);
+  });
+});

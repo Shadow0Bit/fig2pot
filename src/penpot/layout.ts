@@ -1,9 +1,10 @@
 /**
  * Auto layout, layout-child and constraint attributes.
  *
- * Every position in the IR is already resolved, and Penpot does not re-run
- * layouts when it opens a file, so these attributes only make the result
- * editable. They follow the Figma exporter plugin:
+ * Every position in the IR is already resolved and Penpot's exporter draws
+ * the stored positions, but the workspace re-runs flex layout when it opens a
+ * file and saves the result, so these attributes also decide what the editor
+ * shows. They follow the Figma exporter plugin:
  *
  * - Directions are `row-reverse` / `column-reverse`. Penpot flows the children
  *   of a non-reversed flex board from the END of its `shapes` vector (see
