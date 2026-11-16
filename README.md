@@ -324,6 +324,8 @@ and 36 failing boards, worst first):
 
 ## Development
 
+How to contribute (PR rules, fixtures, bug reports): [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ```
 src/cli.ts, src/index.ts   the CLI; the library entry point (convert, uploadToPenpot, …)
 src/ir.ts                  the neutral intermediate model both sides share

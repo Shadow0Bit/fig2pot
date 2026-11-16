@@ -41,7 +41,7 @@ schema: `src/fig/schema.d.ts` (do not edit by hand; the readable form is
 - TypeScript, ESM, Node ≥ 24. Relative imports carry the `.ts` extension.
   Only erasable syntax (no `enum`, no `namespace`, no constructor parameter
   properties). `strict` + `noUncheckedIndexedAccess`.
-- No new runtime dependencies without the orchestrator's sign-off.
+- No new runtime dependencies without maintainer approval (say why in the PR).
 - Tests: vitest, under `test/`, mirroring `src/`. Real `.fig` fixtures live in
   `test/fixtures/` (small, checked in) and `test/fixtures-large/` (not in git).
 
