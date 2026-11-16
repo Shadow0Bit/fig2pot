@@ -44,9 +44,11 @@ function translatePaint(paint: fig.Paint, ctx: TranslateContext, node: FigNode |
   const type = paint.type ?? 'SOLID';
   switch (type) {
     case 'SOLID': {
-      const color = (paint.colorVar && resolveColorVariable(ctx.doc, paint.colorVar, node)) || paint.color;
+      const bound = paint.colorVar && resolveColorVariable(ctx.doc, paint.colorVar, node);
+      // Figma folds a bound variable's alpha into the paint's stored `opacity`, so only the variable's RGB is taken.
+      const color = bound ? { ...bound, a: paint.color?.a ?? 1 } : paint.color;
       if (!color) ctx.warn('paint-missing-color', 'solid paint without a colour; using black', node);
-      else if (paint.colorVar && color === paint.color && !paint.colorVar.value?.colorValue) {
+      else if (paint.colorVar && !bound && !paint.colorVar.value?.colorValue) {
         ctx.warn('unresolved-color-variable', 'colour variable not found in the file; using the cached colour', node);
       }
       return { ...base, type: 'solid', color: colorFromKiwi(color) };

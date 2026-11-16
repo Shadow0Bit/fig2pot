@@ -251,3 +251,35 @@ describe('remote symbols detached from an auto layout parent (B2)', () => {
     expect(byId.get('9:3')!.sizing).toEqual({ horizontal: 'fixed', vertical: 'hug' });
   });
 });
+
+describe('variable-bound solid paints', () => {
+  const variable = (id: string, a: number) =>
+    mk('VARIABLE', { variableDataValues: { entries: [{ modeID: { sessionID: 19, localID: 0 }, variableData: { value: { colorValue: { r: 0.5, g: 0.25, b: 0, a } } } }] } }, [], id);
+  const bound = (id: string, opacity: number) => ({
+    type: 'SOLID',
+    // Figma's cache of the variable: RGB in `color` (alpha 1), the alpha in `opacity`.
+    color: { r: 1, g: 0, b: 0, a: 1 },
+    opacity,
+    colorVar: { value: { alias: { guid: { sessionID: Number(id.split(':')[0]), localID: Number(id.split(':')[1]) } } }, dataType: 'ALIAS' },
+  });
+
+  it('takes the RGB of the variable and the alpha Figma stored on the paint, not both alphas', () => {
+    // An 8% variable is stored as opacity 0.08; multiplying its alpha in again gave 0.64% (an invisible badge).
+    const rect = mk('ROUNDED_RECTANGLE', { fillPaints: [bound('12:1', 0.08), bound('12:2', 0.08)] }, [], '12:3');
+    const { get, codes } = run([rect], { internal: [variable('12:1', 0.08), variable('12:2', 1)] });
+    const fills = (get('12:3') as ir.RectNode).fills as ir.SolidPaint[];
+    expect(codes).not.toContain('unresolved-color-variable');
+    for (const fill of fills) {
+      expect(fill.color).toEqual({ r: 0.5, g: 0.25, b: 0, a: 1 });
+      expect(fill.color.a * fill.opacity).toBeCloseTo(0.08);
+    }
+  });
+
+  it('keeps the cached colour, with a warning, when the variable is not in the file', () => {
+    const rect = mk('ROUNDED_RECTANGLE', { fillPaints: [bound('12:9', 0.08)] }, [], '12:4');
+    const { get, codes } = run([rect]);
+    const [fill] = (get('12:4') as ir.RectNode).fills as ir.SolidPaint[];
+    expect(codes).toContain('unresolved-color-variable');
+    expect(fill).toMatchObject({ color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 0.08 });
+  });
+});
